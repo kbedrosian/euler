@@ -28,18 +28,18 @@ def digits( x ):
         return result
 
 def longestRepeatedSequenceInQuotient( dividend, divisor ):
-    def digitAtIdx( digitIdx ):
-        if digitIdx < len( dividendDigits ):
-            return dividendDigits[ digitIdx ]
-        else:
-            return 0
-
     if dividend == 0:
         return None
 
     quotientStr = ''
     lengthOfRepeatedSequence = None
     dividendDigits = digits( dividend )
+
+    def digitAtIdx( digitIdx ):
+        if digitIdx < len( dividendDigits ):
+            return dividendDigits[ digitIdx ]
+        else:
+            return 0
 
     digitIdx = 0
     intermediateDividend = dividendDigits[ 0 ]
@@ -48,37 +48,44 @@ def longestRepeatedSequenceInQuotient( dividend, divisor ):
         if digitIdx == len( dividendDigits ):
             quotientStr += '.'
 
+        if digitIdx >= len( dividendDigits ):
+            # If we are in the fractional part, start checking for cycles i.e.
+            # intermediate dividend values we have seen before.
+            if intermediateDividend in intermediateDividendsIdx:
+                # Remove the trailing 0 if there is one.
+                if quotientStr[ -1 ] == '0':
+                    quotientStr = quotientStr[ :-1 ]
+                previousDigitIdx = intermediateDividendsIdx[ intermediateDividend ]
+                lengthOfRepeatedSequence = digitIdx - previousDigitIdx
+                quotientStr = quotientStr[ :previousDigitIdx+1 ] + '(' + quotientStr[ previousDigitIdx+1: ] + ')'
+                break
+            else:
+                intermediateDividendsIdx[ intermediateDividend ] = digitIdx
+
         if intermediateDividend < divisor:
             quotientStr += '0'
             digitIdx += 1
             intermediateDividend = 10 * intermediateDividend + digitAtIdx( digitIdx )
-            continue
+        else:
+            # Consume the intermediate dividend.
+            intermediateQuotient = intermediateDividend / divisor
+            assert intermediateQuotient in range( 1, 10 )
+            quotientStr += str( intermediateQuotient )
 
-        if intermediateDividend in intermediateDividendsIdx:
-            lengthOfRepeatedSequence = \
-                digitIdx - intermediateDividendsIdx[ intermediateDividend ]
-            quotientStr += ')'
-            break
-
-        # Consume the intermediate dividend.
-        intermediateDividendsIdx[ intermediateDividend ] = digitIdx
-        intermediateQuotient = intermediateDividend / divisor
-        assert intermediateQuotient in range( 1, 10 )
-        quotientStr += str( intermediateQuotient )
-
-        digitIdx += 1
-        intermediateDividend = 10 * ( intermediateDividend % divisor ) + digitAtIdx( digitIdx )
+            digitIdx += 1
+            intermediateDividend = 10 * ( intermediateDividend % divisor ) + digitAtIdx( digitIdx )
 
         if intermediateDividend == 0:
             break
 
-
+    print quotientStr
     return lengthOfRepeatedSequence
 
 if __name__ == '__main__':
+    l = longestRepeatedSequenceInQuotient( 1, 11 )
     maxLenRepeatedSequence = 0
     divisorForMaxSeq = 1
-    for i in xrange( 1, 1000 ):
+    for i in xrange( 1, 12 ):
         l = longestRepeatedSequenceInQuotient( 1, i )
         if l > maxLenRepeatedSequence:
             maxLenRepeatedSequence = l
